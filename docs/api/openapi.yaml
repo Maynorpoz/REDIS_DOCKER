@@ -1,0 +1,585 @@
+openapi: 3.1.0
+info:
+  title: Reservar Cancha API
+  description: >
+    API REST para la gestión de reservas de canchas de fútbol.
+    Permite a jugadores buscar canchas, verificar disponibilidad y crear reservas.
+    Los administradores pueden gestionar el estado de los turnos del día.
+  version: 1.0.0
+  contact:
+    name: Administrador del Sistema
+    email: admin@reservarcancha.com
+
+servers:
+  - url: http://localhost:8000
+    description: Servidor local de desarrollo
+
+tags:
+  - name: Canchas
+    description: Operaciones sobre canchas de fútbol
+  - name: Reservas
+    description: Operaciones sobre reservas de turnos
+
+paths:
+
+  /canchas:
+    get:
+      tags: [Canchas]
+      summary: Buscar y listar canchas
+      description: >
+        Retorna las canchas activas. Si se envía el parámetro `nombre`,
+        filtra por coincidencia parcial (sin distinguir mayúsculas/minúsculas).
+        Si no hay coincidencias devuelve una lista vacía.
+      operationId: listar_canchas
+      parameters:
+        - name: nombre
+          in: query
+          required: false
+          description: Texto para buscar canchas por nombre
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de canchas encontradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cancha'
+              example:
+                - id: c1
+                  nombre: Cancha Los Pinos
+                  ubicacion: Av. Principal 123, Zona Norte
+                  tipo_superficie: CESPED_SINTETICO
+                  precio_por_hora: 80.0
+                  capacidad_jugadores: 10
+                  descripcion: Cancha de fútbol 5 con césped sintético
+                  activa: true
+
+  /canchas/{cancha_id}:
+    get:
+      tags: [Canchas]
+      summary: Obtener cancha por ID
+      description: Retorna los datos detallados de una cancha específica.
+      operationId: obtener_cancha
+      parameters:
+        - name: cancha_id
+          in: path
+          required: true
+          description: Identificador único de la cancha
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Datos de la cancha
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cancha'
+        '404':
+          description: Cancha no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Cancha 'c99' no encontrada."
+
+  /canchas/{cancha_id}/disponibilidad:
+    get:
+      tags: [Canchas]
+      summary: Verificar disponibilidad de horario
+      description: >
+        Consulta si una cancha está libre para un horario específico.
+        Retorna también el precio estimado del turno.
+      operationId: verificar_disponibilidad
+      parameters:
+        - name: cancha_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fecha
+          in: query
+          required: true
+          description: Fecha del turno (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: hora_inicio
+          in: query
+          required: true
+          description: Hora de inicio (HH:MM)
+          schema:
+            type: string
+            pattern: '^\d{2}:\d{2}$'
+        - name: duracion_horas
+          in: query
+          required: false
+          description: Duración en horas (1-4)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 4
+            default: 1
+      responses:
+        '200':
+          description: Resultado de disponibilidad
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Disponibilidad'
+              examples:
+                disponible:
+                  summary: Horario libre
+                  value:
+                    disponible: true
+                    cancha_id: c1
+                    cancha_nombre: Cancha Los Pinos
+                    fecha: '2025-12-20'
+                    hora_inicio: '10:00'
+                    hora_fin: '12:00'
+                    precio_estimado: 160.0
+                ocupado:
+                  summary: Horario ocupado
+                  value:
+                    disponible: false
+                    cancha_id: c1
+                    cancha_nombre: Cancha Los Pinos
+                    fecha: '2025-12-20'
+                    hora_inicio: '10:00'
+                    hora_fin: '12:00'
+                    precio_estimado: 160.0
+        '404':
+          description: Cancha no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Parámetros inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /reservas:
+    post:
+      tags: [Reservas]
+      summary: Crear reserva
+      description: >
+        Crea una nueva reserva para una cancha.
+        Verifica disponibilidad en tiempo real antes de confirmar.
+        Retorna un código único (RC-XXXXXXXX) para consultas futuras.
+      operationId: crear_reserva
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservaCreate'
+            example:
+              cancha_id: c1
+              nombre_equipo: Los Cracks FC
+              telefono_contacto: '987654321'
+              fecha: '2025-12-20'
+              hora_inicio: '10:00'
+              duracion_horas: 2
+      responses:
+        '201':
+          description: Reserva creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reserva'
+        '404':
+          description: Cancha no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflicto de horario — el turno ya está reservado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: El horario ya no está disponible, elija otro.
+        '422':
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+    get:
+      tags: [Reservas]
+      summary: Listar reservas (Panel Admin)
+      description: >
+        Lista reservas con filtros opcionales por cancha, fecha y estado.
+        Ordenadas cronológicamente. Ideal para el panel del administrador.
+      operationId: listar_reservas
+      parameters:
+        - name: cancha_id
+          in: query
+          required: false
+          description: Filtrar por ID de cancha
+          schema:
+            type: string
+        - name: fecha
+          in: query
+          required: false
+          description: Filtrar por fecha (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: estado
+          in: query
+          required: false
+          description: Filtrar por estado
+          schema:
+            $ref: '#/components/schemas/EstadoReserva'
+      responses:
+        '200':
+          description: Lista de reservas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reserva'
+
+  /reservas/{reserva_id}:
+    get:
+      tags: [Reservas]
+      summary: Obtener reserva por ID
+      description: Retorna los detalles completos de una reserva usando su ID interno.
+      operationId: obtener_reserva
+      parameters:
+        - name: reserva_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Datos de la reserva
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reserva'
+        '404':
+          description: Reserva no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: Reserva no encontrada.
+
+    delete:
+      tags: [Reservas]
+      summary: Cancelar reserva
+      description: >
+        Cancela una reserva. Solo se permite si faltan al menos 2 horas para el turno.
+        Si el turno es inminente, se debe contactar al administrador de la cancha.
+      operationId: cancelar_reserva
+      parameters:
+        - name: reserva_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Reserva cancelada exitosamente (sin cuerpo)
+        '400':
+          description: No se puede cancelar (menos de 2h o ya finalizada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: >
+                  No se puede cancelar con menos de 2 horas de anticipación.
+                  Por favor contacta directamente al administrador de la cancha.
+        '404':
+          description: Reserva no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /reservas/codigo/{codigo}:
+    get:
+      tags: [Reservas]
+      summary: Buscar reserva por código
+      description: >
+        Permite al jugador consultar su reserva con el código recibido al confirmar
+        (formato RC-XXXXXXXX). No distingue mayúsculas/minúsculas.
+      operationId: obtener_reserva_por_codigo
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          description: Código de reserva (RC-XXXXXXXX)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Datos de la reserva
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reserva'
+        '404':
+          description: Código no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /reservas/{reserva_id}/estado:
+    patch:
+      tags: [Reservas]
+      summary: Actualizar estado de reserva (Admin)
+      description: >
+        Permite al administrador cambiar el estado de una reserva a
+        FINALIZADA o NO_SHOW. No se puede modificar una reserva CANCELADA.
+      operationId: actualizar_estado_reserva
+      parameters:
+        - name: reserva_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservaEstadoUpdate'
+            example:
+              estado: FINALIZADA
+      responses:
+        '200':
+          description: Estado actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reserva'
+        '400':
+          description: No se puede modificar (reserva CANCELADA)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Reserva no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Estado inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+components:
+  schemas:
+
+    TipoSuperficie:
+      type: string
+      enum:
+        - CESPED_NATURAL
+        - CESPED_SINTETICO
+        - CEMENTO
+      description: Tipo de superficie de la cancha
+
+    EstadoReserva:
+      type: string
+      enum:
+        - CONFIRMADA
+        - CANCELADA
+        - FINALIZADA
+        - NO_SHOW
+      description: Estado actual de la reserva
+
+    Cancha:
+      type: object
+      required: [id, nombre, ubicacion, tipo_superficie, precio_por_hora, capacidad_jugadores, activa]
+      properties:
+        id:
+          type: string
+          description: Identificador único de la cancha
+          example: c1
+        nombre:
+          type: string
+          description: Nombre de la cancha
+          example: Cancha Los Pinos
+        ubicacion:
+          type: string
+          description: Dirección o sector
+          example: Av. Principal 123, Zona Norte
+        tipo_superficie:
+          $ref: '#/components/schemas/TipoSuperficie'
+        precio_por_hora:
+          type: number
+          format: float
+          description: Precio en moneda local por hora
+          example: 80.0
+        capacidad_jugadores:
+          type: integer
+          description: Número máximo de jugadores
+          example: 10
+        descripcion:
+          type: string
+          nullable: true
+          description: Descripción opcional de la cancha
+        activa:
+          type: boolean
+          description: Si la cancha está habilitada para reservas
+          default: true
+
+    ReservaCreate:
+      type: object
+      required: [cancha_id, nombre_equipo, telefono_contacto, fecha, hora_inicio, duracion_horas]
+      properties:
+        cancha_id:
+          type: string
+          description: ID de la cancha a reservar
+          example: c1
+        nombre_equipo:
+          type: string
+          minLength: 2
+          description: Nombre del equipo o jugador
+          example: Los Cracks FC
+        telefono_contacto:
+          type: string
+          minLength: 7
+          description: Teléfono de contacto
+          example: '987654321'
+        fecha:
+          type: string
+          format: date
+          description: Fecha del turno (YYYY-MM-DD)
+          example: '2025-12-20'
+        hora_inicio:
+          type: string
+          pattern: '^\d{2}:\d{2}$'
+          description: Hora de inicio en formato HH:MM
+          example: '10:00'
+        duracion_horas:
+          type: integer
+          minimum: 1
+          maximum: 4
+          description: Duración del turno en horas (1 a 4)
+          example: 2
+
+    ReservaEstadoUpdate:
+      type: object
+      required: [estado]
+      properties:
+        estado:
+          $ref: '#/components/schemas/EstadoReserva'
+
+    Reserva:
+      type: object
+      properties:
+        id:
+          type: string
+          description: UUID único de la reserva
+          example: 3f2e1a-...
+        cancha_id:
+          type: string
+          example: c1
+        nombre_equipo:
+          type: string
+          example: Los Cracks FC
+        telefono_contacto:
+          type: string
+          example: '987654321'
+        fecha:
+          type: string
+          format: date
+          example: '2025-12-20'
+        hora_inicio:
+          type: string
+          example: '10:00'
+        hora_fin:
+          type: string
+          example: '12:00'
+        duracion_horas:
+          type: integer
+          example: 2
+        estado:
+          $ref: '#/components/schemas/EstadoReserva'
+        total:
+          type: number
+          format: float
+          description: Precio total del turno
+          example: 160.0
+        codigo_reserva:
+          type: string
+          description: Código único de la reserva (RC-XXXXXXXX)
+          example: RC-A1B2C3D4
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-12-19T15:30:00'
+
+    Disponibilidad:
+      type: object
+      properties:
+        disponible:
+          type: boolean
+          example: true
+        cancha_id:
+          type: string
+          example: c1
+        cancha_nombre:
+          type: string
+          example: Cancha Los Pinos
+        fecha:
+          type: string
+          format: date
+          example: '2025-12-20'
+        hora_inicio:
+          type: string
+          example: '10:00'
+        hora_fin:
+          type: string
+          example: '12:00'
+        precio_estimado:
+          type: number
+          format: float
+          example: 160.0
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Descripción del error
+          example: Reserva no encontrada.
+
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              loc:
+                type: array
+                items:
+                  type: string
+              msg:
+                type: string
+              type:
+                type: string
