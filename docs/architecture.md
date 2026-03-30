@@ -48,6 +48,7 @@ flowchart TD
 | Método | Ruta | Historia | Descripción |
 |--------|------|----------|-------------|
 | `GET` | `/canchas` | HU-01 | Buscar/listar canchas por nombre |
+| `POST` | `/canchas` | HU-01 | Registrar nueva cancha |
 | `GET` | `/canchas/{id}` | HU-01 | Detalle de una cancha |
 | `GET` | `/canchas/{id}/disponibilidad` | HU-02 | Verificar horario disponible |
 | `POST` | `/reservas` | HU-02 | Crear reserva |
