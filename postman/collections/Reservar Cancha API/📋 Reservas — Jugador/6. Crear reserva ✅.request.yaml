@@ -1,0 +1,31 @@
+$kind: http-request
+description: Crea una nueva reserva. El script de Tests guarda automáticamente
+  el ID y código en variables de colección para usarlos en las siguientes
+  requests.
+url: "{{base_url}}/reservas"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "cancha_id": "c1",
+      "nombre_equipo": "Los Cracks FC",
+      "telefono_contacto": "987654321",
+      "fecha": "2026-12-15",
+      "hora_inicio": "18:00",
+      "duracion_horas": 2
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      if (pm.response.code === 201) {
+          const body = pm.response.json();
+          pm.collectionVariables.set('reserva_id', body.id);
+          pm.collectionVariables.set('codigo_reserva', body.codigo_reserva);
+          console.log('✅ reserva_id guardado:', body.id);
+          console.log('✅ codigo_reserva guardado:', body.codigo_reserva);
+      }
+    language: text/javascript
+order: 1000

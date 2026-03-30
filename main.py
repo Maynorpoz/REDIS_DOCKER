@@ -401,6 +401,15 @@ class Cancha(BaseModel):
     activa: bool = True
 
 
+class CanchaCreate(BaseModel):
+    nombre: str = Field(..., min_length=2, description="Nombre de la cancha")
+    ubicacion: str = Field(..., min_length=5, description="Dirección o sector")
+    tipo_superficie: TipoSuperficie
+    precio_por_hora: float = Field(..., gt=0, description="Precio en moneda local por hora")
+    capacidad_jugadores: int = Field(..., gt=0, description="Número máximo de jugadores")
+    descripcion: Optional[str] = None
+
+
 class ReservaCreate(BaseModel):
     cancha_id: str = Field(..., description="ID de la cancha a reservar")
     nombre_equipo: str = Field(..., min_length=2, description="Nombre del equipo o jugador")
@@ -466,6 +475,8 @@ db_canchas: dict[str, Cancha] = {
 }
 
 db_reservas: dict[str, Reserva] = {}
+_reserva_counter = 0
+_cancha_counter = 3  # c1, c2, c3 ya están precargadas
 
 
 # ==============================================================
@@ -563,6 +574,31 @@ def obtener_cancha(cancha_id: str):
     return db_canchas[cancha_id]
 
 
+@app.post(
+    "/canchas",
+    response_model=Cancha,
+    status_code=201,
+    tags=["Canchas"],
+    summary="Crear cancha",
+    description="Registra una nueva cancha en el sistema.",
+)
+def crear_cancha(datos: CanchaCreate):
+    global _cancha_counter
+    _cancha_counter += 1
+    cancha_id = f"c{_cancha_counter}"
+    nueva_cancha = Cancha(
+        id=cancha_id,
+        nombre=datos.nombre,
+        ubicacion=datos.ubicacion,
+        tipo_superficie=datos.tipo_superficie,
+        precio_por_hora=datos.precio_por_hora,
+        capacidad_jugadores=datos.capacidad_jugadores,
+        descripcion=datos.descripcion,
+    )
+    db_canchas[cancha_id] = nueva_cancha
+    return nueva_cancha
+
+
 @app.get(
     "/canchas/{cancha_id}/disponibilidad",
     tags=["Canchas"],
@@ -613,6 +649,7 @@ def verificar_disponibilidad(
     ),
 )
 def crear_reserva(datos: ReservaCreate):
+    global _reserva_counter
     if datos.cancha_id not in db_canchas:
         raise HTTPException(status_code=404, detail=f"Cancha '{datos.cancha_id}' no encontrada.")
 
@@ -625,7 +662,8 @@ def crear_reserva(datos: ReservaCreate):
         )
 
     hora_fin = _calcular_hora_fin(datos.hora_inicio, datos.duracion_horas)
-    reserva_id = str(uuid.uuid4())
+    _reserva_counter += 1
+    reserva_id = str(_reserva_counter)
 
     nueva_reserva = Reserva(
         id=reserva_id,

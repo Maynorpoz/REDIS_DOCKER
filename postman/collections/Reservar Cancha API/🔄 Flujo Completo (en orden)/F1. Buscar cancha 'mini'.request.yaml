@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/canchas?nombre=mini"
+method: GET
+queryParams:
+  nombre: mini
+order: 1000

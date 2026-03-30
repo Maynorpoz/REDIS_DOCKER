@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{base_url}}/reservas?cancha_id=c3&fecha=2026-11-10"
+method: GET
+queryParams:
+  cancha_id: c3
+  fecha: 2026-11-10
+order: 6000

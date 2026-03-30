@@ -1,0 +1,8 @@
+$kind: http-request
+description: Vista del día para el admin de la cancha c1.
+url: "{{base_url}}/reservas?cancha_id=c1&fecha=2026-12-15"
+method: GET
+queryParams:
+  cancha_id: c1
+  fecha: 2026-12-15
+order: 2000

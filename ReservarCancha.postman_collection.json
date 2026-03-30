@@ -1,0 +1,641 @@
+{
+  "info": {
+    "name": "Reservar Cancha API",
+    "_postman_id": "reservar-cancha-v1",
+    "description": "Colección completa para probar la API de reservas de canchas de fútbol.\n\n**Base URL:** http://localhost:8000\n\n**Antes de usar:**\n1. Arranca el servidor: `uvicorn main:app --reload`\n2. Importa esta colección en Postman\n3. Ejecuta las requests en orden para un flujo completo\n\n**Canchas precargadas:** c1, c2, c3",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "reserva_id",
+      "value": "",
+      "type": "string",
+      "description": "Se llena automáticamente al crear una reserva"
+    },
+    {
+      "key": "codigo_reserva",
+      "value": "",
+      "type": "string",
+      "description": "Se llena automáticamente al crear una reserva"
+    }
+  ],
+  "item": [
+    {
+      "name": "🏟️ Canchas",
+      "item": [
+        {
+          "name": "1. Listar todas las canchas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/canchas",
+              "host": ["{{base_url}}"],
+              "path": ["canchas"]
+            },
+            "description": "Retorna todas las canchas activas. Hay 3 precargadas: c1, c2, c3."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Buscar canchas por nombre",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/canchas?nombre=pinos",
+              "host": ["{{base_url}}"],
+              "path": ["canchas"],
+              "query": [
+                {
+                  "key": "nombre",
+                  "value": "pinos",
+                  "description": "Búsqueda parcial, no distingue mayúsculas/minúsculas"
+                }
+              ]
+            },
+            "description": "Filtra canchas cuyo nombre contenga el texto buscado."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Obtener cancha por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/canchas/c1",
+              "host": ["{{base_url}}"],
+              "path": ["canchas", "c1"]
+            },
+            "description": "IDs disponibles: c1, c2, c3. Prueba con 'c99' para ver el 404."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Obtener cancha inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/canchas/c99",
+              "host": ["{{base_url}}"],
+              "path": ["canchas", "c99"]
+            },
+            "description": "Debe retornar 404 con mensaje de error."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Crear nueva cancha (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cancha La Esperanza\",\n  \"ubicacion\": \"Av. Sur 456, Sector Este\",\n  \"tipo_superficie\": \"CESPED_NATURAL\",\n  \"precio_por_hora\": 90.0,\n  \"capacidad_jugadores\": 12,\n  \"descripcion\": \"Cancha nueva con vestidores\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/canchas",
+              "host": ["{{base_url}}"],
+              "path": ["canchas"]
+            },
+            "description": "Crea una nueva cancha. Retorna 201 con id asignado (c4, c5, ...). Valores válidos para tipo_superficie: CESPED_NATURAL, CESPED_SINTETICO, CEMENTO."
+          },
+          "response": []
+        },
+        {
+          "name": "5b. Verificar disponibilidad (disponible)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/canchas/c1/disponibilidad?fecha=2026-12-15&hora_inicio=18:00&duracion_horas=2",
+              "host": ["{{base_url}}"],
+              "path": ["canchas", "c1", "disponibilidad"],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "2026-12-15",
+                  "description": "Fecha en formato YYYY-MM-DD"
+                },
+                {
+                  "key": "hora_inicio",
+                  "value": "18:00",
+                  "description": "Hora en formato HH:MM"
+                },
+                {
+                  "key": "duracion_horas",
+                  "value": "2",
+                  "description": "Entre 1 y 4 horas"
+                }
+              ]
+            },
+            "description": "Retorna disponible:true y precio_estimado = 80 * 2 = 160."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📋 Reservas — Jugador",
+      "item": [
+        {
+          "name": "6. Crear reserva ✅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('reserva_id', body.id);",
+                  "    pm.collectionVariables.set('codigo_reserva', body.codigo_reserva);",
+                  "    console.log('✅ reserva_id guardado:', body.id);",
+                  "    console.log('✅ codigo_reserva guardado:', body.codigo_reserva);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cancha_id\": \"c1\",\n  \"nombre_equipo\": \"Los Cracks FC\",\n  \"telefono_contacto\": \"987654321\",\n  \"fecha\": \"2026-12-15\",\n  \"hora_inicio\": \"18:00\",\n  \"duracion_horas\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/reservas",
+              "host": ["{{base_url}}"],
+              "path": ["reservas"]
+            },
+            "description": "Crea una nueva reserva. El script de Tests guarda automáticamente el ID y código en variables de colección para usarlos en las siguientes requests."
+          },
+          "response": []
+        },
+        {
+          "name": "7. Crear reserva — conflicto de horario (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cancha_id\": \"c1\",\n  \"nombre_equipo\": \"Equipo Intruso\",\n  \"telefono_contacto\": \"123456789\",\n  \"fecha\": \"2026-12-15\",\n  \"hora_inicio\": \"19:00\",\n  \"duracion_horas\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/reservas",
+              "host": ["{{base_url}}"],
+              "path": ["reservas"]
+            },
+            "description": "Intenta reservar un horario que se superpone con la reserva anterior (18:00-20:00). Debe retornar 409 Conflict."
+          },
+          "response": []
+        },
+        {
+          "name": "8. Crear reserva — datos inválidos (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cancha_id\": \"c1\",\n  \"nombre_equipo\": \"A\",\n  \"telefono_contacto\": \"123\",\n  \"fecha\": \"2026-12-15\",\n  \"hora_inicio\": \"9:00\",\n  \"duracion_horas\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/reservas",
+              "host": ["{{base_url}}"],
+              "path": ["reservas"]
+            },
+            "description": "Nombre muy corto, teléfono corto, formato de hora incorrecto, duración > 4. Debe retornar 422."
+          },
+          "response": []
+        },
+        {
+          "name": "9. Consultar reserva por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reservas/{{reserva_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reservas", "{{reserva_id}}"]
+            },
+            "description": "Usa el ID guardado al crear la reserva (request #6)."
+          },
+          "response": []
+        },
+        {
+          "name": "10. Consultar reserva por código (RC-...)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reservas/codigo/{{codigo_reserva}}",
+              "host": ["{{base_url}}"],
+              "path": ["reservas", "codigo", "{{codigo_reserva}}"]
+            },
+            "description": "Usa el código RC-XXXXXXXX guardado al crear la reserva. No distingue mayúsculas."
+          },
+          "response": []
+        },
+        {
+          "name": "10b. Consultar código inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reservas/codigo/RC-ZZZZZZZZ",
+              "host": ["{{base_url}}"],
+              "path": ["reservas", "codigo", "RC-ZZZZZZZZ"]
+            },
+            "description": "Debe retornar 404."
+          },
+          "response": []
+        },
+        {
+          "name": "11. Cancelar reserva ✅ (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reservas/{{reserva_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reservas", "{{reserva_id}}"]
+            },
+            "description": "Cancela la reserva creada. La fecha está en el futuro (2026-12-15), así que debe funcionar (204 No Content, sin body).\n\nNOTA: Si ya cancelaste esta reserva, retornará 400 'ya se encuentra cancelada'."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🛠️ Reservas — Admin",
+      "item": [
+        {
+          "name": "12. Panel admin — todas las reservas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reservas",
+              "host": ["{{base_url}}"],
+              "path": ["reservas"]
+            },
+            "description": "Lista todas las reservas ordenadas cronológicamente."
+          },
+          "response": []
+        },
+        {
+          "name": "13. Panel admin — filtrar por cancha y fecha",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reservas?cancha_id=c1&fecha=2026-12-15",
+              "host": ["{{base_url}}"],
+              "path": ["reservas"],
+              "query": [
+                {
+                  "key": "cancha_id",
+                  "value": "c1"
+                },
+                {
+                  "key": "fecha",
+                  "value": "2026-12-15"
+                }
+              ]
+            },
+            "description": "Vista del día para el admin de la cancha c1."
+          },
+          "response": []
+        },
+        {
+          "name": "14. Panel admin — filtrar por estado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reservas?estado=CONFIRMADA",
+              "host": ["{{base_url}}"],
+              "path": ["reservas"],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "CONFIRMADA",
+                  "description": "CONFIRMADA | CANCELADA | FINALIZADA | NO_SHOW"
+                }
+              ]
+            },
+            "description": "Filtra reservas por estado. Valores: CONFIRMADA, CANCELADA, FINALIZADA, NO_SHOW."
+          },
+          "response": []
+        },
+        {
+          "name": "15. Crear reserva para gestión admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('reserva_id', body.id);",
+                  "    console.log('✅ reserva_id actualizado:', body.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cancha_id\": \"c2\",\n  \"nombre_equipo\": \"FC Deportivo\",\n  \"telefono_contacto\": \"555000111\",\n  \"fecha\": \"2026-12-20\",\n  \"hora_inicio\": \"10:00\",\n  \"duracion_horas\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/reservas",
+              "host": ["{{base_url}}"],
+              "path": ["reservas"]
+            },
+            "description": "Crea una reserva fresca en c2 para probar las acciones de admin (PATCH). Actualiza la variable reserva_id."
+          },
+          "response": []
+        },
+        {
+          "name": "16. Marcar como FINALIZADA (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"FINALIZADA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/reservas/{{reserva_id}}/estado",
+              "host": ["{{base_url}}"],
+              "path": ["reservas", "{{reserva_id}}", "estado"]
+            },
+            "description": "El admin marca el turno como completado. Valores válidos: CONFIRMADA, CANCELADA, FINALIZADA, NO_SHOW."
+          },
+          "response": []
+        },
+        {
+          "name": "17. Marcar como NO_SHOW (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"NO_SHOW\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/reservas/{{reserva_id}}/estado",
+              "host": ["{{base_url}}"],
+              "path": ["reservas", "{{reserva_id}}", "estado"]
+            },
+            "description": "El equipo no se presentó. Cambia el estado a NO_SHOW."
+          },
+          "response": []
+        },
+        {
+          "name": "18. Intentar modificar reserva CANCELADA (400)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"FINALIZADA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/reservas/{{reserva_id}}/estado",
+              "host": ["{{base_url}}"],
+              "path": ["reservas", "{{reserva_id}}", "estado"]
+            },
+            "description": "Primero ejecuta el request #11 (cancelar) y luego este. Debe retornar 400 indicando que no se puede modificar una reserva CANCELADA."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔄 Flujo Completo (en orden)",
+      "item": [
+        {
+          "name": "F1. Buscar cancha 'mini'",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/canchas?nombre=mini",
+              "host": ["{{base_url}}"],
+              "path": ["canchas"],
+              "query": [{ "key": "nombre", "value": "mini" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "F2. Verificar disponibilidad c3",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/canchas/c3/disponibilidad?fecha=2026-11-10&hora_inicio=08:00&duracion_horas=1",
+              "host": ["{{base_url}}"],
+              "path": ["canchas", "c3", "disponibilidad"],
+              "query": [
+                { "key": "fecha", "value": "2026-11-10" },
+                { "key": "hora_inicio", "value": "08:00" },
+                { "key": "duracion_horas", "value": "1" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "F3. Reservar c3 (guardar variables)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('reserva_id', body.id);",
+                  "    pm.collectionVariables.set('codigo_reserva', body.codigo_reserva);",
+                  "    console.log('ID:', body.id);",
+                  "    console.log('Código:', body.codigo_reserva);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cancha_id\": \"c3\",\n  \"nombre_equipo\": \"Veloces FC\",\n  \"telefono_contacto\": \"912345678\",\n  \"fecha\": \"2026-11-10\",\n  \"hora_inicio\": \"08:00\",\n  \"duracion_horas\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/reservas",
+              "host": ["{{base_url}}"],
+              "path": ["reservas"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "F4. Ver comprobante por código",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reservas/codigo/{{codigo_reserva}}",
+              "host": ["{{base_url}}"],
+              "path": ["reservas", "codigo", "{{codigo_reserva}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "F5. Verificar disponibilidad — ahora ocupada",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/canchas/c3/disponibilidad?fecha=2026-11-10&hora_inicio=08:00&duracion_horas=1",
+              "host": ["{{base_url}}"],
+              "path": ["canchas", "c3", "disponibilidad"],
+              "query": [
+                { "key": "fecha", "value": "2026-11-10" },
+                { "key": "hora_inicio", "value": "08:00" },
+                { "key": "duracion_horas", "value": "1" }
+              ]
+            },
+            "description": "Debe retornar disponible: false ahora que existe la reserva."
+          },
+          "response": []
+        },
+        {
+          "name": "F6. Panel admin — reservas del día",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reservas?cancha_id=c3&fecha=2026-11-10",
+              "host": ["{{base_url}}"],
+              "path": ["reservas"],
+              "query": [
+                { "key": "cancha_id", "value": "c3" },
+                { "key": "fecha", "value": "2026-11-10" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "F7. Admin marca NO_SHOW",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"NO_SHOW\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/reservas/{{reserva_id}}/estado",
+              "host": ["{{base_url}}"],
+              "path": ["reservas", "{{reserva_id}}", "estado"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

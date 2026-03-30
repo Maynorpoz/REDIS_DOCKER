@@ -1,0 +1,5 @@
+$kind: http-request
+description: "Retorna todas las canchas activas. Hay 3 precargadas: c1, c2, c3."
+url: "{{base_url}}/canchas"
+method: GET
+order: 1000

@@ -1,0 +1,14 @@
+$kind: http-request
+description: "Primero ejecuta el request #11 (cancelar) y luego este. Debe
+  retornar 400 indicando que no se puede modificar una reserva CANCELADA."
+url: "{{base_url}}/reservas/{{reserva_id}}/estado"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "estado": "FINALIZADA"
+    }
+order: 7000

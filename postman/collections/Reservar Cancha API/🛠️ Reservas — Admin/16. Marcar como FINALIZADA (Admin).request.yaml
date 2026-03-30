@@ -1,0 +1,14 @@
+$kind: http-request
+description: "El admin marca el turno como completado. Valores válidos:
+  CONFIRMADA, CANCELADA, FINALIZADA, NO_SHOW."
+url: "{{base_url}}/reservas/{{reserva_id}}/estado"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "estado": "FINALIZADA"
+    }
+order: 5000

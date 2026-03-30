@@ -1,0 +1,19 @@
+$kind: http-request
+description: Intenta reservar un horario que se superpone con la reserva
+  anterior (18:00-20:00). Debe retornar 409 Conflict.
+url: "{{base_url}}/reservas"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "cancha_id": "c1",
+      "nombre_equipo": "Equipo Intruso",
+      "telefono_contacto": "123456789",
+      "fecha": "2026-12-15",
+      "hora_inicio": "19:00",
+      "duracion_horas": 1
+    }
+order: 2000

@@ -1,0 +1,16 @@
+$kind: http-request
+description: Retorna disponible:true y precio_estimado = 80 * 2 = 160.
+url: "{{base_url}}/canchas/c1/disponibilidad?fecha=2026-12-15&hora_inicio=18:00\
+  &duracion_horas=2"
+method: GET
+queryParams:
+  - key: fecha
+    value: 2026-12-15
+    description: Fecha en formato YYYY-MM-DD
+  - key: hora_inicio
+    value: 18:00
+    description: Hora en formato HH:MM
+  - key: duracion_horas
+    value: "2"
+    description: Entre 1 y 4 horas
+order: 5000

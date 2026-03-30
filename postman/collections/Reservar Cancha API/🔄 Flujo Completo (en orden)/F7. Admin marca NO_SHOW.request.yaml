@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{base_url}}/reservas/{{reserva_id}}/estado"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "estado": "NO_SHOW"
+    }
+order: 7000

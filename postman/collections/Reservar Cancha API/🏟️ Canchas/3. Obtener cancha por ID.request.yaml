@@ -1,0 +1,5 @@
+$kind: http-request
+description: "IDs disponibles: c1, c2, c3. Prueba con 'c99' para ver el 404."
+url: "{{base_url}}/canchas/c1"
+method: GET
+order: 3000
