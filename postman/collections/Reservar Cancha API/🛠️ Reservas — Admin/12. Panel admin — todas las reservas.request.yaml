@@ -1,5 +1,0 @@
-$kind: http-request
-description: Lista todas las reservas ordenadas cronológicamente.
-url: "{{base_url}}/reservas"
-method: GET
-order: 1000

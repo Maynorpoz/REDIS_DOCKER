@@ -1,5 +1,0 @@
-$kind: http-request
-description: Debe retornar 404.
-url: "{{base_url}}/reservas/codigo/RC-ZZZZZZZZ"
-method: GET
-order: 6000

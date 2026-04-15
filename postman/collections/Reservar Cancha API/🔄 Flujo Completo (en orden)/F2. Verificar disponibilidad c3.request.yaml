@@ -1,9 +1,0 @@
-$kind: http-request
-url: "{{base_url}}/canchas/c3/disponibilidad?fecha=2026-11-10&hora_inicio=08:00\
-  &duracion_horas=1"
-method: GET
-queryParams:
-  fecha: 2026-11-10
-  hora_inicio: 08:00
-  duracion_horas: "1"
-order: 2000

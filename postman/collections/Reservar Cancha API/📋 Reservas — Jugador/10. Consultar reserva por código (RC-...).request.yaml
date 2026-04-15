@@ -1,6 +1,0 @@
-$kind: http-request
-description: Usa el código RC-XXXXXXXX guardado al crear la reserva. No
-  distingue mayúsculas.
-url: "{{base_url}}/reservas/codigo/{{codigo_reserva}}"
-method: GET
-order: 5000

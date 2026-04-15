@@ -1,4 +1,0 @@
-$kind: http-request
-url: "{{base_url}}/reservas/codigo/{{codigo_reserva}}"
-method: GET
-order: 4000

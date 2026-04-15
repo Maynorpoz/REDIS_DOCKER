@@ -1,9 +1,0 @@
-$kind: http-request
-description: Filtra canchas cuyo nombre contenga el texto buscado.
-url: "{{base_url}}/canchas?nombre=pinos"
-method: GET
-queryParams:
-  - key: nombre
-    value: pinos
-    description: Búsqueda parcial, no distingue mayúsculas/minúsculas
-order: 2000
