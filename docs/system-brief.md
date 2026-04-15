@@ -21,6 +21,8 @@
 - Cancelación de reservas por parte del usuario.
 - Panel de control (Dashboard) visual para el administrador con la lista de reservas diarias por cancha.
 - Cambio de estado de la reserva por parte del administrador (Finalizada, Cancelada, No-Show).
+- Cache de consultas frecuentes con Redis (TTL definido por recurso).
+- Containerización del sistema con Docker y Docker Compose.
 
 ### Out-of-Scope (Fuera del alcance - Por ahora)
 - Pagos o cobros por adelantado integrados en la aplicación (pasarela de pagos).

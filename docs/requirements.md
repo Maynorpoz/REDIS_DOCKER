@@ -1,6 +1,6 @@
 # Product Backlog: Reservar Cancha
 
-Tablero Trello: https://trello.com/invite/b/69a391a0ee00db77afb1a978/ATTI94a7cd52d7811265a4cf35622d296ed5435DD393/bookeat
+Tablero Trello: https://trello.com/b/VoGJSjOv/reservar-cancha
 
 ---
 
@@ -16,6 +16,8 @@ Tablero Trello: https://trello.com/invite/b/69a391a0ee00db77afb1a978/ATTI94a7cd5
 | 6 | Actualización de Estados por el Administrador | Should | 2 |
 | 7 | Reseñas del Jugador | Could | 3 |
 | 8 | Pago Adelantado (Anticipo) | Won't | - |
+| 9 | Cache de consultas frecuentes con Redis | **Must** | 2 |
+| 10 | Containerización con Docker Compose | **Must** | 2 |
 
 ---
 
@@ -142,5 +144,7 @@ El MVP incluye las historias marcadas como **Must** porque permiten cumplir el o
 - Sin la búsqueda de canchas ni la creación de reservas, el sistema no tendría valor funcional.
 - La cancelación de reservas es necesaria para liberar horarios y evitar conflictos.
 - El panel del administrador es indispensable para organizar los turnos diarios.
+- El cache con Redis (HU-09) mejora el rendimiento en endpoints de alta frecuencia.
+- La containerización con Docker (HU-10) garantiza reproducibilidad del entorno de ejecución.
 - Las historias **Should** y **Could** se consideran mejoras para versiones futuras del sistema.
 - La historia **Won't** queda fuera del alcance inicial del proyecto.

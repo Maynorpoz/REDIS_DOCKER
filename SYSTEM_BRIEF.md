@@ -102,17 +102,20 @@ sequenceDiagram
 │  ┌──────────────┐   ┌────────────────────┐  │
 │  │   /canchas   │   │    /reservas       │  │
 │  │  GET (buscar)│   │  POST (crear)      │  │
-│  │  GET /{id}   │   │  GET  (panel)      │  │
-│  │  GET /dispon.│   │  PATCH /estado     │  │
-│  └──────────────┘   │  DELETE (cancelar) │  │
+│  │  GET /{id}*  │   │  GET  (panel)      │  │
+│  │  GET /dispon.│   │  GET /{id}*        │  │
+│  └──────────────┘   │  PATCH /estado     │  │
+│                     │  DELETE (cancelar) │  │
 │                     └────────────────────┘  │
 │       Validación Pydantic · Reglas Negocio  │
-└───────────────────┬─────────────────────────┘
-                    │
-┌───────────────────▼─────────────────────────┐
-│            Almacenamiento                   │
-│   In-Memory dict (MVP) → PostgreSQL (v2)    │
-└─────────────────────────────────────────────┘
+└──────────┬────────────────────┬─────────────┘
+           │ cache-aside        │
+┌──────────▼──────────┐  ┌──────▼──────────────┐
+│   Redis 7 (Cache)   │  │   Almacenamiento    │
+│  cancha:{id} 300s   │  │ In-Memory dict MVP  │
+│  reserva:{id} 120s  │  │ PostgreSQL (v2)     │
+│  * endpoints cached │  └─────────────────────┘
+└─────────────────────┘
 ```
 
 ### Endpoints del MVP
@@ -165,9 +168,11 @@ sequenceDiagram
 
 | Componente | Tecnología |
 |---|---|
-| Lenguaje | Python 3.10+ |
+| Lenguaje | Python 3.12 |
 | Framework API | FastAPI |
 | Validación | Pydantic v2 |
 | Documentación automática | Swagger UI (`/docs`) |
 | Almacenamiento MVP | In-Memory (dict) |
+| Cache | Redis 7 |
 | Servidor | Uvicorn |
+| Contenedores | Docker + Docker Compose |
