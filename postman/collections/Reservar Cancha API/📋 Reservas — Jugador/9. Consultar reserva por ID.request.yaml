@@ -1,4 +1,5 @@
 $kind: http-request
+name: 9. Consultar reserva por ID
 description: "Usa el ID guardado al crear la reserva (request #6)."
 url: "{{base_url}}/reservas/{{reserva_id}}"
 method: GET

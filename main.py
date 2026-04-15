@@ -18,6 +18,9 @@ from typing import Optional, List
 from datetime import datetime, date
 from enum import Enum
 import uuid
+import json
+import os
+import redis
 
 
 # ==============================================================
@@ -370,7 +373,48 @@ async def documentacion_personalizada():
 
 
 # ==============================================================
-# 2. Enumeraciones
+# 2. Conexión a Redis (Cache)
+# ==============================================================
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+TTL_CANCHA  = 300   # 5 minutos — datos de cancha cambian poco
+TTL_RESERVA = 120   # 2 minutos — reserva puede cambiar de estado
+
+try:
+    cache = redis.from_url(REDIS_URL, decode_responses=True)
+    cache.ping()
+    print(f"[cache] Redis conectado en {REDIS_URL}")
+except Exception:
+    cache = None
+    print("[cache] Redis no disponible — funcionando sin cache")
+
+
+def cache_get(key: str):
+    """Devuelve el valor cacheado o None si no existe / Redis no disponible."""
+    if cache is None:
+        return None
+    valor = cache.get(key)
+    if valor:
+        return json.loads(valor)
+    return None
+
+
+def cache_set(key: str, valor: dict, ttl: int):
+    """Guarda un valor en Redis con TTL. Silencia errores si Redis no está."""
+    if cache is None:
+        return
+    cache.setex(key, ttl, json.dumps(valor, default=str))
+
+
+def cache_delete(key: str):
+    """Elimina una clave del cache."""
+    if cache is None:
+        return
+    cache.delete(key)
+
+
+# ==============================================================
+# 3. Enumeraciones
 # ==============================================================
 
 class EstadoReserva(str, Enum):
@@ -569,9 +613,18 @@ def listar_canchas(
     description="Retorna los datos detallados de una cancha específica.",
 )
 def obtener_cancha(cancha_id: str):
+    # Cache hit
+    cached = cache_get(f"cancha:{cancha_id}")
+    if cached:
+        return cached
+
+    # Cache miss — buscar en memoria
     if cancha_id not in db_canchas:
         raise HTTPException(status_code=404, detail=f"Cancha '{cancha_id}' no encontrada.")
-    return db_canchas[cancha_id]
+
+    cancha = db_canchas[cancha_id]
+    cache_set(f"cancha:{cancha_id}", cancha.model_dump(), TTL_CANCHA)
+    return cancha
 
 
 @app.post(
@@ -719,9 +772,18 @@ def listar_reservas(
     description="Retorna los detalles completos de una reserva usando su ID interno.",
 )
 def obtener_reserva(reserva_id: str):
+    # Cache hit
+    cached = cache_get(f"reserva:{reserva_id}")
+    if cached:
+        return cached
+
+    # Cache miss — buscar en memoria
     if reserva_id not in db_reservas:
         raise HTTPException(status_code=404, detail="Reserva no encontrada.")
-    return db_reservas[reserva_id]
+
+    reserva = db_reservas[reserva_id]
+    cache_set(f"reserva:{reserva_id}", reserva.model_dump(), TTL_RESERVA)
+    return reserva
 
 
 @app.get(
@@ -769,6 +831,7 @@ def actualizar_estado_reserva(reserva_id: str, datos: ReservaEstadoUpdate):
 
     reserva.estado = datos.estado
     db_reservas[reserva_id] = reserva
+    cache_delete(f"reserva:{reserva_id}")
     return reserva
 
 
@@ -815,4 +878,5 @@ def cancelar_reserva(reserva_id: str):
 
     reserva.estado = EstadoReserva.CANCELADA
     db_reservas[reserva_id] = reserva
+    cache_delete(f"reserva:{reserva_id}")
     # 204 No Content — sin cuerpo en la respuesta

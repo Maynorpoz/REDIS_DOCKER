@@ -10,11 +10,13 @@ API REST construida con **FastAPI** (Python 3.10+). La validación de datos se r
 
 | Componente | Tecnología |
 |---|---|
-| Lenguaje | Python 3.10+ |
+| Lenguaje | Python 3.12 |
 | Framework API | FastAPI |
 | Validación | Pydantic v2 |
 | Almacenamiento MVP | In-Memory (dict) |
+| Cache | Redis 7 |
 | Servidor | Uvicorn |
+| Contenedores | Docker + Docker Compose |
 | Documentación | OpenAPI 3.1 / Swagger UI |
 
 ---
@@ -26,13 +28,18 @@ flowchart TD
     Cliente([Cliente Web / App / Test Script])
     Cliente -->|HTTP / JSON| API
 
-    subgraph API [API REST — FastAPI]
-        direction TB
-        Canchas["📋 /canchas\n GET · GET /{id} · GET /{id}/disponibilidad"]
-        Reservas["📅 /reservas\n POST · GET · GET /{id}\n GET /codigo/{c} · PATCH /{id}/estado · DELETE /{id}"]
-        Validacion["✅ Validación Pydantic v2\nReglas de Negocio"]
+    subgraph Docker [Docker Compose]
+        subgraph API [API REST — FastAPI]
+            direction TB
+            Canchas["📋 /canchas\n GET · GET /{id} · GET /{id}/disponibilidad"]
+            Reservas["📅 /reservas\n POST · GET · GET /{id}\n GET /codigo/{c} · PATCH /{id}/estado · DELETE /{id}"]
+            Validacion["✅ Validación Pydantic v2\nReglas de Negocio"]
+        end
+
+        Redis["⚡ Redis 7\nCache con TTL\ncancha:{id} → 300s\nreserva:{id} → 120s"]
     end
 
+    API -->|cache-aside| Redis
     API --> Storage
 
     subgraph Storage [Almacenamiento]
@@ -123,6 +130,7 @@ flowchart TD
 ```
 MVP (actual)         →   v2 (futuro)
 In-Memory dict       →   PostgreSQL + SQLAlchemy
+Redis cache          →   Redis Cluster (alta disponibilidad)
 Sin autenticación    →   JWT / OAuth2
 ```
 
@@ -136,6 +144,7 @@ Sin autenticación    →   JWT / OAuth2
 | **FastAPI** | Enrutamiento, manejo de peticiones y respuestas HTTP |
 | **Pydantic v2** | Validación y tipado de datos de entrada y salida |
 | **Lógica de Negocio** | Detección de conflictos, regla de 2h, cálculo de precios |
+| **Redis** | Cache de consultas frecuentes (`GET /canchas/{id}`, `GET /reservas/{id}`) con TTL |
 | **Almacenamiento** | Persistencia en memoria (MVP) → PostgreSQL (v2) |
 
 ---

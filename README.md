@@ -8,10 +8,11 @@ Plataforma diseñada para conectar a jugadores y equipos con canchas de fútbol 
 
 1. [Descripción del Sistema](#descripción-del-sistema)
 2. [Instalación y Ejecución](#instalación-y-ejecución)
-3. [Endpoints de la API](#endpoints-de-la-api)
-4. [Flujo Principal de Negocio](#flujo-principal-de-negocio)
-5. [Reglas de Negocio](#reglas-de-negocio)
-6. [Estructura del Proyecto](#estructura-del-proyecto)
+3. [Cache con Redis](#cache-con-redis)
+4. [Endpoints de la API](#endpoints-de-la-api)
+5. [Flujo Principal de Negocio](#flujo-principal-de-negocio)
+6. [Reglas de Negocio](#reglas-de-negocio)
+7. [Estructura del Proyecto](#estructura-del-proyecto)
 
 ---
 
@@ -30,10 +31,20 @@ Plataforma diseñada para conectar a jugadores y equipos con canchas de fútbol 
 
 ## Instalación y Ejecución
 
-### Requisitos
-- Python 3.10 o superior
+### Opción A — Docker Compose (recomendado)
 
-### Pasos
+**Requisitos:** Docker Desktop instalado y corriendo.
+
+```bash
+# Levantar API + Redis con un solo comando
+docker compose up --build
+```
+
+La API queda disponible en: **http://localhost:8000**
+
+### Opción B — Ejecución local sin Docker
+
+**Requisitos:** Python 3.10 o superior.
 
 ```bash
 # 1. Instalar dependencias
@@ -43,12 +54,28 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-La API queda disponible en: **http://localhost:8000**
+> Sin Redis corriendo localmente, la API funciona igual pero sin cache.
 
 ### Documentación interactiva (Swagger UI)
 Abrir en el navegador: **http://localhost:8000/docs**
 
-Desde ahí se pueden probar todos los endpoints directamente sin herramientas externas.
+---
+
+## Cache con Redis
+
+La API implementa cache **cache-aside** con Redis en dos endpoints de alta frecuencia:
+
+| Endpoint | Clave Redis | TTL |
+|---|---|---|
+| `GET /canchas/{id}` | `cancha:{id}` | 300 s |
+| `GET /reservas/{id}` | `reserva:{id}` | 120 s |
+
+**Flujo:**
+- **Cache hit:** el dato existe en Redis → se responde directamente sin tocar la memoria principal.
+- **Cache miss:** se busca en memoria → se guarda en Redis con TTL → se responde.
+- Al modificar o cancelar una reserva, su clave se elimina de Redis automáticamente.
+
+Ver documentación completa en [docs/cache.md](docs/cache.md).
 
 ---
 
@@ -107,12 +134,19 @@ Administrador:
 ## Estructura del Proyecto
 
 ```
-tarea2/
-├── main.py              # API ejecutable (FastAPI) — punto de entrada
-├── requirements.txt     # Dependencias Python
-├── API_CONTRACT.md      # Contrato de la API con request/response y ejemplos curl
-├── SYSTEM_BRIEF.md      # Arquitectura, diagramas de casos de uso y modelo de datos
-├── BACKLOG.md           # Product Backlog con 8 historias de usuario (MoSCoW)
-├── REQUERIMENTS.md      # Requerimientos originales del sistema (Tarea 1)
-└── README.md            # Este archivo
+tarea3/
+├── main.py                  # API ejecutable (FastAPI) con cache Redis
+├── requirements.txt         # Dependencias Python
+├── Dockerfile               # Imagen Docker de la API
+├── docker-compose.yml       # Orquestación API + Redis
+├── API_CONTRACT.md          # Contrato de la API con request/response y ejemplos curl
+├── SYSTEM_BRIEF.md          # Arquitectura, diagramas de casos de uso y modelo de datos
+├── BACKLOG.md               # Product Backlog con 10 historias de usuario (MoSCoW)
+├── REQUERIMENTS.md          # Requerimientos originales del sistema
+├── docs/
+│   ├── architecture.md      # Diagrama de arquitectura con Redis (Mermaid)
+│   ├── cache.md             # Documentación del cache: TTL, claves, flujo, riesgos
+│   ├── requirements.md      # Requerimientos funcionales y no funcionales
+│   └── system-brief.md      # Resumen ejecutivo del sistema
+└── README.md                # Este archivo
 ```

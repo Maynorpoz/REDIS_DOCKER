@@ -1,4 +1,5 @@
 $kind: http-request
+name: 6. Crear reserva ✅
 description: Crea una nueva reserva. El script de Tests guarda automáticamente
   el ID y código en variables de colección para usarlos en las siguientes
   requests.
@@ -10,12 +11,12 @@ body:
   type: json
   content: |-
     {
-      "cancha_id": "c1",
-      "nombre_equipo": "Los Cracks FC",
-      "telefono_contacto": "987654321",
-      "fecha": "2026-12-15",
+      "cancha_id": "c3",
+      "nombre_equipo": "Los MALOS",
+      "telefono_contacto": "33005164",
+      "fecha": "2026-12-14",
       "hora_inicio": "18:00",
-      "duracion_horas": 2
+      "duracion_horas": 4
     }
 scripts:
   - type: afterResponse

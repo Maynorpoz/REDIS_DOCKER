@@ -16,6 +16,8 @@ Tablero Trello: https://trello.com/invite/b/69a391a0ee00db77afb1a978/ATTI94a7cd5
 | 6 | Actualización de Estados por el Administrador | Should | 2 |
 | 7 | Reseñas del Jugador | Could | 3 |
 | 8 | Pago Adelantado (Anticipo) | Won't | - |
+| 9 | Cache de consultas frecuentes con Redis | **Must** | 2 |
+| 10 | Containerización con Docker Compose | **Must** | 2 |
 
 ---
 
@@ -85,6 +87,39 @@ Tablero Trello: https://trello.com/invite/b/69a391a0ee00db77afb1a978/ATTI94a7cd5
 - Las reservas se ordenan cronológicamente por hora de inicio.
 
 **Endpoint:** `GET /reservas?cancha_id={id}&fecha={fecha}`
+
+---
+
+---
+
+### 9. Cache de consultas frecuentes con Redis
+**Prioridad:** Must (Debe tener — Sprint 2)
+**Historia:** Como jugador, quiero que la API responda rápido al consultar una cancha o mi reserva, para tener una experiencia fluida sin esperas innecesarias.
+
+**Criterios de Aceptación:**
+- `GET /canchas/{id}` debe retornar el dato desde Redis si ya fue consultado antes (cache hit).
+- `GET /reservas/{id}` debe retornar el dato desde Redis si ya fue consultado antes (cache hit).
+- Toda clave cacheada debe tener TTL definido: 300 s para canchas, 120 s para reservas.
+- Al actualizar o cancelar una reserva, su clave debe eliminarse de Redis para evitar datos obsoletos.
+- Si Redis no está disponible, la API debe seguir funcionando desde memoria (sin fallo total).
+
+**Endpoints afectados:** `GET /canchas/{id}`, `GET /reservas/{id}`, `PATCH /reservas/{id}/estado`, `DELETE /reservas/{id}`
+
+**Estado:** ✅ Completada — Sprint 2
+
+---
+
+### 10. Containerización con Docker Compose
+**Prioridad:** Must (Debe tener — Sprint 2)
+**Historia:** Como desarrollador, quiero levantar toda la aplicación con un solo comando para facilitar el despliegue local y la reproducibilidad del entorno.
+
+**Criterios de Aceptación:**
+- Debe existir un `Dockerfile` que empaquete la API correctamente.
+- Debe existir un `docker-compose.yml` que defina los servicios `api` y `redis`.
+- El comando `docker compose up --build` debe levantar ambos servicios sin configuración adicional.
+- La API debe estar disponible en `http://localhost:8000` y Redis en el puerto `6379`.
+
+**Estado:** ✅ Completada — Sprint 2
 
 ---
 
